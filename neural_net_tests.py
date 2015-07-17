@@ -16,3 +16,5 @@ test_net.createConnection(1,test_net.sensorNodes[0],test_net.hiddenNodes[0], Tru
 test_net.createConnection(1,test_net.hiddenNodes[0],test_net.outputNodes[0], True)
 
 print test_net.process([1,1,1,1,1])
+
+print test_net

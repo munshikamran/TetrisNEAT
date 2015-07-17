@@ -9,17 +9,37 @@ class NeuralNet:
 		self.hiddenNodes = []
 		self.sensorNodes = []
 		self.outputNodes = []
-	 	self.connections = []
+		self.connections = []
+		self.node_num = 0
+
+	def __str__(self):
+		str_out = "sensorNodes: \n" 
+		for node in self.sensorNodes:
+			str_out += str(node)
+		str_out += "hiddenNodes: \n" 
+		for node in self.hiddenNodes:
+			str_out += str(node) 
+		str_out += "outputNodes: \n" 
+		for node in self.outputNodes:
+			str_out += str(node)   
+		str_out += "connections: \n" 
+		for con in self.connections:
+			str_out += str(con)
+
+		return str_out
 
 
 	def createHiddenNode(self, threshold):
-		self.hiddenNodes.append(Node(threshold))
+		self.hiddenNodes.append(Node(threshold, self.node_num))
+		self.node_num += 1
 
 	def createOutputNode(self, threshold):
-		self.outputNodes.append(outputNode(threshold))
+		self.outputNodes.append(outputNode(threshold, self.node_num))
+		self.node_num += 1
 
 	def createSensorNode(self, threshold):
-		self.sensorNodes.append(Node(threshold))
+		self.sensorNodes.append(Node(threshold, self.node_num))
+		self.node_num += 1
 
 	def createConnection(self, weight, start, end, enabled):
 		self.connections.append(Connection(weight, start, end, enabled))
@@ -36,16 +56,22 @@ class NEATComponent:
 
 
 class Node(NEATComponent):
-	def __init__(self, threshold):
+	def __init__(self, threshold, node_num):
 		self.threshold = threshold
 		self.genetic_marker = self.genetic_marker_control
-		self.genetic_marker_control += 1
+		NEATComponent.genetic_marker_control += 1
 		self.input = []
 		self.output = []
 
 		self.mailbox = []
 
 		self.ready = False
+
+		self.node_num = node_num
+
+	def __str__(self):
+		return 'id: ' + str(self.node_num) + ' thresh:' + str(self.threshold) + ' genetic_marker:' + str(self.genetic_marker) + "\n"
+
 
 	def setThreshold(self, threshold):
 		self.threshold = threshold
@@ -84,8 +110,8 @@ class hiddenNode(Node):
 			connection.send(package)
 
 class outputNode(Node):
-	def __init__(self, threshold):
-		Node.__init__(self,threshold)
+	def __init__(self, threshold, node_num):
+		Node.__init__(self, threshold, node_num)
 		self.ready = False
 		self.out = None
 
@@ -109,6 +135,9 @@ class Connection(NEATComponent):
 
 		end.addInput(self)
 		start.addOutput(self)
+
+	def __str__(self):
+		return "start: " + str(self.start.node_num) + " end:" + str(self.end.node_num) + " weight: " + str(self.weight) + " on: " + str(self.enabled) + "\n"
 
 	def setWeight(self, weight):
 		self.weight = weight
