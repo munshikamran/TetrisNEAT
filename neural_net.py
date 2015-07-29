@@ -1,5 +1,31 @@
 # A class to represent a neural net for the NEAT algorithm
 
+import random, copy
+
+
+def NEAT_merge_nets(net1, net2):
+	new_net = copy.deepcopy(net1)
+
+	genetic_marker_merge(new_net.connections, net2.connections)
+	genetic_marker_merge(new_net.hiddenNodes, net2.hiddenNodes)
+	genetic_marker_merge(new_net.sensorNodes, net2.sensorNodes)
+	genetic_marker_merge(new_net.outputNodes, net2.outputNodes)
+
+	return new_net
+
+
+
+def genetic_marker_merge(new_net_list, list2):
+	found = {}
+	for el in list2:
+		found[el.genetic_marker] = el
+	for con in new_net_list:
+		try:
+			new_con = random.choice([con, found[con.genetic_marker]])
+			con.setWeight(new_con.getWeight())
+		except KeyError:
+			found[con.genetic_marker] = con	
+
 
 
 
@@ -30,8 +56,10 @@ class NeuralNet:
 
 
 	def createHiddenNode(self, threshold):
-		self.hiddenNodes.append(Node(threshold, self.node_num))
+		newNode = Node(threshold, self.node_num)
+		self.hiddenNodes.append(newNode)
 		self.node_num += 1
+		return newNode
 
 	def createOutputNode(self, threshold):
 		self.outputNodes.append(outputNode(threshold, self.node_num))
@@ -48,6 +76,24 @@ class NeuralNet:
 		for i in range(0,len(self.sensorNodes)):
 			self.sensorNodes[i].send(sensor_readings[i])
 		return [node.out for node in self.outputNodes]
+
+	def mutate_connection(self, a, b):
+		self.connections.append(Connection(random.uniform(a, b), random.choice(self.hiddenNodes+self.outputNodes+self.sensorNodes), random.choice(self.hiddenNodes+self.outputNodes+self.sensorNodes), True))
+
+
+	def mutate_node(self, a, b):
+		replaced = random.choice(self.connections)
+		insertion = self.createHiddenNode(random.uniform(a,b))
+		self.createConnection(1, insertion, replaced.end, True)
+		replaced.end = insertion
+
+	def mutate_weight(self, a, b):
+		if random.random() < .5:
+			random.choice(self.connections).setWeight(random.uniform(a,b))
+		else:
+			random.choice(random.choice([self.hiddenNodes, self.sensorNodes, self.outputNodes])).setWeight(random.uniform(a,b))
+
+
 
 
 
@@ -72,11 +118,14 @@ class Node(NEATComponent):
 	def __str__(self):
 		return 'id: ' + str(self.node_num) + ' thresh:' + str(self.threshold) + ' genetic_marker:' + str(self.genetic_marker) + "\n"
 
+	def __deepcopy__(self, memo):
+		return copy.copy(self)
 
-	def setThreshold(self, threshold):
+
+	def setWeight(self, threshold):
 		self.threshold = threshold
 
-	def getThreshold(self):
+	def getWeight(self):
 		return self.threshold
 
 	def addInput(self, x):
@@ -96,7 +145,7 @@ class Node(NEATComponent):
 			for mail in self.mailbox:
 				tot += mail
 			self.mailbox = []
-			if tot >= self.getThreshold():
+			if tot >= self.getWeight():
 				self.send(1)
 			else:
 				self.send(0)
@@ -131,13 +180,16 @@ class Connection(NEATComponent):
 		self.end = end
 		self.enabled = enabled
 		self.genetic_marker = self.genetic_marker_control
-		self.genetic_marker_control += 1
+		NEATComponent.genetic_marker_control += 1
 
 		end.addInput(self)
 		start.addOutput(self)
 
 	def __str__(self):
-		return "start: " + str(self.start.node_num) + " end:" + str(self.end.node_num) + " weight: " + str(self.weight) + " on: " + str(self.enabled) + "\n"
+		return "start: " + str(self.start.node_num) + " end:" + str(self.end.node_num) + " weight: " + str(self.weight) + " on: " + str(self.enabled) + ' genetic_marker:' + str(self.genetic_marker)  + "\n"
+
+	def __deepcopy__(self, memo):
+		return copy.copy(self)
 
 	def setWeight(self, weight):
 		self.weight = weight
