@@ -88,10 +88,7 @@ class NeuralNet:
 		replaced.end = insertion
 
 	def mutate_weight(self, a, b):
-		if random.random() < .5:
-			random.choice(self.connections).setWeight(random.uniform(a,b))
-		else:
-			random.choice(random.choice([self.hiddenNodes, self.sensorNodes, self.outputNodes])).setWeight(random.uniform(a,b))
+		random.choice(self.hiddenNodes + self.sensorNodes + self.outputNodes + self.connections).setWeight(random.uniform(a,b))
 
 
 
