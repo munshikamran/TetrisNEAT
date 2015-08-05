@@ -94,6 +94,7 @@ tetris_agent.create_new_generation(test_scores)
 
 print "New Generation \n"
 for key in tetris_agent.net_species:
+	print "sepcies:", key
 	for net in tetris_agent.net_species[key]:
 		print net
 		print "\n"

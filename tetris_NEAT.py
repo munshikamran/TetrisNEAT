@@ -140,6 +140,8 @@ class TetrisApp(object):
 		                                             # events, so we
 		                                             # block them.
 		self.next_stone = tetris_shapes[rand(len(tetris_shapes))]
+		self.Agent = tetris_NEAT_operations.Tetris_NEAT_Agent()
+		self.Agent.create_initial_nets(12, 14, 30, -15, 15)
 		self.init_game()
 	
 	def new_stone(self):
@@ -339,18 +341,30 @@ class TetrisApp(object):
 		self.paused = False
 		
 		dont_burn_my_cpu = pygame.time.Clock()
+
+		net_scores = {}
+		
+		gen = 0
 		while 1:
 			self.screen.fill((0,0,0))
 			if self.gameover:
-				
+				# save the current net's score
+				net_scores[species].append(self.lines + self.score/100000.0)
 
+				species, net = self.Agent.next_net()
+				if net == None:
+					# Create a new gen
+					self.Agent.create_new_generation(net_scores)
+					species, net = self.Agent.next_net()
+
+				self.init_game()
 
 
 			if not self.gameover:
 				if self.paused:
 					self.center_msg("Paused")
 				else:
-					if self.gen >= 0:
+					if gen >= 0:
 						pygame.draw.line(self.screen,
 							(255,255,255),
 							(self.rlim+1, 0),
@@ -370,8 +384,9 @@ class TetrisApp(object):
 				pygame.display.update()
 
 			# Agent actions here
-			next_pos, next_rot = self.find_next_action(self.board, self.stone)
-			self.move_rotate_drop(next_pos, next_rot)			
+			net_in = self.Agent.get_state(self.board, self.stone, self.next_stone)
+			net_out = self.Agent.output_to_nove(net.process(net_in))
+			self.move_rotate_drop(net_out[0], net_out[1])			
 
 			for event in pygame.event.get():
 				if event.type == pygame.USEREVENT+1:

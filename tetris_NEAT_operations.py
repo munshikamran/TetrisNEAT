@@ -5,6 +5,10 @@ class Tetris_NEAT_Agent:
 	def __init__(self):
 		self.net_species = {}
 		self.species_delta = 3
+		self.cur_species = 0
+		self.cur_net = -1
+		self.all_nets = self.net_species.items()
+		self.num_species = len(self.net_species.keys())
 
 
 	def get_state(self, board, stone, next_stone):
@@ -18,8 +22,28 @@ class Tetris_NEAT_Agent:
 					break
 		return heights.append(stone).append(next_stone)
 
-	# def output_to_move(self, output):
-	# 	# Translate the net output into a move (pos, rot)
+	def next_net(self):
+		self.cur_net += 1
+		if self.cur_net == len(self.all_nets[self.cur_species][0]):
+			self.cur_net = 0
+			self.cur_species += 1
+		if self.cur_species == self.num_species:
+			return None
+		else:
+			return (self.all_nets[self.cur_species][0], self.all_nets[self.cur_species][1][self.cur_net])
+
+
+	def output_to_move(self, output):
+		# Translate the net output into a move (pos, rot)
+		# The first 10 are the position, the next 4 are the rotation
+		pos_choices = output[0:10]
+		rot_choices = output[10:14]
+
+		pos = pos_choices.index(max(pos_choices))
+		rot = rot_choices.index(max(rot_choices))
+
+		return (pos, rot)
+
 
 
 	def create_initial_nets(self, sensors, output, pop, a, b):
@@ -53,6 +77,8 @@ class Tetris_NEAT_Agent:
 			species_key = species[0]
 			species_members = species[1]
 			species_scores = scores[species_key]
+			species_start = len(new_nets)
+			species_size = len(species_members)
 			print species_members
 
 			while len(species_scores) > 1: # Make a limit of the number of new ones that can be added
@@ -72,10 +98,12 @@ class Tetris_NEAT_Agent:
 
 				# Add the new family to the list
 				new_nets += [first_net, second_net, baby_net]
+			new_nets = new_nets[:species_start + species_size-1]
+			species_start += species_size
 
 		# Mutate the nets
 		for net in new_nets:
-			if random.random() < 1:
+			if random.random() < .05:
 				mutation_type = random.choice(["node", "weight", "connection"])
 				if mutation_type == "node":
 					net.mutate_node(-10, 10)
@@ -96,6 +124,8 @@ class Tetris_NEAT_Agent:
 					new_net_species[net] = [net]
 
 		self.net_species = new_net_species
+		self.all_nets = self.net_species.items()
+		self.num_species = len(self.net_species.keys())
 
 
 
@@ -126,7 +156,7 @@ class Tetris_NEAT_Agent:
 				disjoint += excess
 				excess = len(net1_genetics) + len(net2_genetics)
 				break
-			if net1_genetics[0] < net2_genetics[0]:
+			elif net1_genetics[0] < net2_genetics[0]:
 				net1_genetics.pop(0)
 				if curr == 1:
 					excess += 1
@@ -134,7 +164,7 @@ class Tetris_NEAT_Agent:
 					disjoint += excess
 					excess = 1
 				curr = 1
-			if net1_genetics[0] > net2_genetics[0]:
+			elif net1_genetics[0] > net2_genetics[0]:
 				net2_genetics.pop(0)
 				if curr == 2:
 					excess += 1
@@ -142,7 +172,7 @@ class Tetris_NEAT_Agent:
 					disjoint += excess
 					excess = 1
 				curr = 2
-			if net1_genetics[0] == net2_genetics[0]:
+			elif net1_genetics[0] == net2_genetics[0]:
 				n += 1
 				weight_diff = 0
 				for gene in net1_genes:
