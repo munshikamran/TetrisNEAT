@@ -141,7 +141,7 @@ class TetrisApp(object):
 		                                             # block them.
 		self.next_stone = tetris_shapes[rand(len(tetris_shapes))]
 		self.Agent = tetris_NEAT_operations.Tetris_NEAT_Agent()
-		self.Agent.create_initial_nets(12, 14, 30, -15, 15)
+		self.Agent.create_initial_nets(24, 14, 300, -100, 100)
 		self.init_game()
 	
 	def new_stone(self):
@@ -345,18 +345,30 @@ class TetrisApp(object):
 		net_scores = {}
 		
 		gen = 0
+		species, net = self.Agent.next_net()
+		best_score = -1
 		while 1:
 			self.screen.fill((0,0,0))
 			if self.gameover:
 				# save the current net's score
-				net_scores[species].append(self.lines + self.score/100000.0)
+				if self.lines + self.score/100000.0 > best_score:
+					best_score = self.lines + self.score/100000.0
+				try:
+					net_scores[species].append(self.lines + self.score/100000.0)
+				except KeyError:
+					net_scores[species] = [self.lines + self.score/100000.0]
 
-				species, net = self.Agent.next_net()
-				if net == None:
+				next_net = self.Agent.next_net()
+				
+				if next_net == None:
 					# Create a new gen
 					self.Agent.create_new_generation(net_scores)
 					species, net = self.Agent.next_net()
-
+					print best_score
+					best_score = -1
+				else:
+					species, net = next_net
+				self.gameover = False
 				self.init_game()
 
 
@@ -385,7 +397,7 @@ class TetrisApp(object):
 
 			# Agent actions here
 			net_in = self.Agent.get_state(self.board, self.stone, self.next_stone)
-			net_out = self.Agent.output_to_nove(net.process(net_in))
+			net_out = self.Agent.output_to_move(net.process(net_in))
 			self.move_rotate_drop(net_out[0], net_out[1])			
 
 			for event in pygame.event.get():

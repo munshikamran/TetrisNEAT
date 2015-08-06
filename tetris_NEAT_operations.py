@@ -13,24 +13,44 @@ class Tetris_NEAT_Agent:
 
 	def get_state(self, board, stone, next_stone):
 		heights = []
-		for x in board:
+		for x in range(0, len(board[0])):
 			count = 0
-			for y in board:
+			for y in range(0, len(board)):
 				count+=1
 				if board[y][x] == 1:
 					heights.append(count)
 					break
-		return heights.append(stone).append(next_stone)
+
+		stone_num = [0, 0, 0, 0, 0, 0, 0]
+		next_stone_num = [0, 0, 0, 0, 0, 0, 0]
+		for y in range(0, len(stone)):
+			if stone[y][0] > 0:
+				stone_num[stone[y][0]-1] = 1
+				break
+		for y in range(0, len(next_stone)):
+			if next_stone[y][0] > 0:
+				next_stone_num[next_stone[y][0]-1] = 1
+				break
+
+		return heights + stone_num + next_stone_num
 
 	def next_net(self):
 		self.cur_net += 1
-		if self.cur_net == len(self.all_nets[self.cur_species][0]):
+		if self.cur_net == len(self.all_nets[self.cur_species][1]):
 			self.cur_net = 0
 			self.cur_species += 1
 		if self.cur_species == self.num_species:
+			self.cur_species = 0
+			self.cur_net = -1
 			return None
+		
 		else:
-			return (self.all_nets[self.cur_species][0], self.all_nets[self.cur_species][1][self.cur_net])
+			try:
+				return (self.all_nets[self.cur_species][0], self.all_nets[self.cur_species][1][self.cur_net])
+			except IndexError:
+				print self.all_nets
+				print self.cur_species
+				print self.cur_net
 
 
 	def output_to_move(self, output):
@@ -61,6 +81,8 @@ class Tetris_NEAT_Agent:
 					new_net.createConnection(random.uniform(a,b), new_net.sensorNodes[s], new_net.outputNodes[o], True)
 			net_list.append(new_net)
 		self.net_species[random.choice(net_list)] = net_list
+		self.all_nets = self.net_species.items()
+		self.num_species = len(self.net_species.keys())
 
 
 	def create_new_generation(self, scores):
@@ -79,7 +101,6 @@ class Tetris_NEAT_Agent:
 			species_scores = scores[species_key]
 			species_start = len(new_nets)
 			species_size = len(species_members)
-			print species_members
 
 			while len(species_scores) > 1: # Make a limit of the number of new ones that can be added
 				# Grab the top two nets
@@ -192,7 +213,7 @@ class Tetris_NEAT_Agent:
 
 		c1 = 1.0
 		c2 = 1.0
-		c3 = 1.0
+		c3 = 1.0/50.0
 
 		return (c1*excess)/num_genes + (c2*disjoint)/num_genes + c3*average_weight_diff
 

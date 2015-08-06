@@ -78,7 +78,11 @@ class NeuralNet:
 		return [node.out for node in self.outputNodes]
 
 	def mutate_connection(self, a, b):
-		self.connections.append(Connection(random.uniform(a, b), random.choice(self.hiddenNodes+self.outputNodes+self.sensorNodes), random.choice(self.hiddenNodes+self.outputNodes+self.sensorNodes), True))
+		choices = self.hiddenNodes+self.outputNodes+self.sensorNodes
+		start = random.choice(choices)
+		choices.remove(start)
+		end = random.choice(choices)
+		self.connections.append(Connection(random.uniform(a, b), start, end, True))
 
 
 	def mutate_node(self, a, b):
