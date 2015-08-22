@@ -25,11 +25,11 @@ class Tetris_NEAT_Agent:
 		next_stone_num = [0, 0, 0, 0, 0, 0, 0]
 		for y in range(0, len(stone)):
 			if stone[y][0] > 0:
-				stone_num[stone[y][0]-1] = 1
+				stone_num[stone[y][0]-1] = 10
 				break
 		for y in range(0, len(next_stone)):
 			if next_stone[y][0] > 0:
-				next_stone_num[next_stone[y][0]-1] = 1
+				next_stone_num[next_stone[y][0]-1] = 10
 				break
 
 		return heights + stone_num + next_stone_num
@@ -127,16 +127,17 @@ class Tetris_NEAT_Agent:
 			if random.random() < .05:
 				mutation_type = random.choice(["node", "weight", "connection"])
 				if mutation_type == "node":
-					net.mutate_node(-10, 10)
+					net.mutate_node(-100, 100)
 				if mutation_type == "weight":
-					net.mutate_weight(-10, 10)
+					net.mutate_weight(-100, 100)
 				if mutation_type == "connection":
-					net.mutate_connection(-10, 10)
+					net.mutate_connection(-100, 100)
 
 		# Sort all new nets into their species
 		for net in new_nets:
 			for species_id in new_net_species.keys():
 				placed = False
+				print self.calculate_difference(species_id, net)
 				if self.calculate_difference(species_id, net) < self.species_delta:
 					new_net_species[species_id].append(net)
 					placed = True
@@ -202,7 +203,7 @@ class Tetris_NEAT_Agent:
 				for gene in net2_genes:
 					if gene.genetic_marker == net2_genetics[0]:
 						weight_diff -= gene.getWeight()
-				average_weight_diff += weight_diff
+				average_weight_diff += abs(weight_diff)
 				net1_genetics.pop(0)
 				net2_genetics.pop(0)
 
